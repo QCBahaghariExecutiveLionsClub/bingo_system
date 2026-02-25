@@ -472,7 +472,7 @@
 
 <script>
 // ================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxw_2nRn4UPrfNksf1YcG49YDDV90rsN-bzg9kJgdmQHWTeSXIddyTVEktbjK1wuRxT/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxeWpyacLvgWMpRJ_I83FWZil-S7o7wjeqzHQLpNHN-O7cYmI3U9i9vMoqFNNUy_2KJ/exec";
 // ================================================================
 
 let password = '';
@@ -480,25 +480,38 @@ let drawnNumbers = [];
 let pollingInterval = null;
 
 // Login
+let isInitialized = false;
+
 function doLogin() {
-  password = document.getElementById('pwdInput').value;
+  password = document.getElementById('pwdInput').value.trim();
   if (!password) return;
-  
-  document.getElementById('loginErr').style.display = 'none';
-  
-  // Try to load registrations with this password to verify
+
+  const btn = document.querySelector('.btn-login');
+  const err = document.getElementById('loginErr');
+  err.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+
   apiCall({ action: 'getRegistrations', password })
     .then(data => {
       if (data.success) {
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainPanel').style.display = 'block';
-        init();
+        if (!isInitialized) {
+          isInitialized = true;
+          init();
+        }
       } else {
-        document.getElementById('loginErr').style.display = 'block';
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Enter Host Panel';
       }
     })
     .catch(() => {
-      document.getElementById('loginErr').style.display = 'block';
+      err.textContent = 'Network error. Check your connection and try again.';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Enter Host Panel';
     });
 }
 
@@ -506,6 +519,8 @@ function init() {
   buildBingoBoard();
   loadDraws();
   loadRegistrations();
+  // Clear any existing interval before setting a new one
+  if (pollingInterval) clearInterval(pollingInterval);
   pollingInterval = setInterval(() => {
     loadDraws();
     loadRegistrations();
@@ -515,6 +530,8 @@ function init() {
 // Build 5x5 bingo board display
 function buildBingoBoard() {
   const board = document.getElementById('bingoBoard');
+  // Guard: never build twice
+  if (board.children.length > 0) return;
   const letters = ['B','I','N','G','O'];
   const colors = { B:'#e94560', I:'#f5c842', N:'#0ab68b', G:'#4a90d9', O:'#a855f7' };
 

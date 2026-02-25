@@ -458,27 +458,50 @@
 
 <script>
 // ================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxw_2nRn4UPrfNksf1YcG49YDDV90rsN-bzg9kJgdmQHWTeSXIddyTVEktbjK1wuRxT/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxeWpyacLvgWMpRJ_I83FWZil-S7o7wjeqzHQLpNHN-O7cYmI3U9i9vMoqFNNUy_2KJ/exec";
 // ================================================================
 
 let password = '';
 
+let loginInProgress = false;
+
 function doLogin() {
-  password = document.getElementById('pwdInput').value;
-  if (!password) return;
-  
-  // Validate mod password by calling getRegistrations (it checks mod OR host password)
+  if (loginInProgress) return;  // prevent double-click race
+
+  const rawPwd = document.getElementById('pwdInput').value.trim();
+  if (!rawPwd) return;
+
+  password = rawPwd;
+  const btn = document.querySelector('.btn-login');
+  const err = document.getElementById('loginErr');
+  err.style.display = 'none';
+  err.textContent = 'Incorrect password. Try again.';
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  loginInProgress = true;
+
   apiCall({ action: 'getRegistrations', password })
     .then(data => {
+      loginInProgress = false;
       if (data.success) {
         document.getElementById('loginOverlay').style.display = 'none';
         document.getElementById('mainPanel').style.display = 'block';
+        document.getElementById('cardIdInput').focus();
       } else {
-        document.getElementById('loginErr').style.display = 'block';
+        password = '';
+        err.textContent = 'Incorrect password. Try again.';
+        err.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Access Panel';
       }
     })
     .catch(() => {
-      document.getElementById('loginErr').style.display = 'block';
+      loginInProgress = false;
+      password = '';
+      err.textContent = 'Network error. Check your connection and try again.';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Access Panel';
     });
 }
 

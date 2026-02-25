@@ -569,7 +569,7 @@
 // ================================================================
 // CONFIG — Replace with your deployed Google Apps Script URL
 // ================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxw_2nRn4UPrfNksf1YcG49YDDV90rsN-bzg9kJgdmQHWTeSXIddyTVEktbjK1wuRxT/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxeWpyacLvgWMpRJ_I83FWZil-S7o7wjeqzHQLpNHN-O7cYmI3U9i9vMoqFNNUy_2KJ/exec";
 // ================================================================
 
 const LOCK_TIME = new Date("REGISTRATION_LOCK_TIME_HERE"); // Will be set dynamically
@@ -772,8 +772,14 @@ async function checkSession() {
       } else {
         startCountdown(lockTime);
       }
+    } else {
+      // Backend error - hide countdown bar, allow submission (fail-open pre-game)
+      document.getElementById('countdownBar').style.display = 'none';
     }
-  } catch(e) {}
+  } catch(e) {
+    // Network error - hide countdown bar, allow submission
+    document.getElementById('countdownBar').style.display = 'none';
+  }
 }
 
 function showLocked() {
@@ -804,6 +810,10 @@ function startCountdown(lockTime) {
 // Submit
 async function submitRegistration() {
   const btn = document.getElementById('submitBtn');
+  // Prevent double-submit immediately
+  if (btn.disabled) return;
+  btn.disabled = true;
+
   const err = document.getElementById('mainError');
   err.style.display = 'none';
 
@@ -811,16 +821,22 @@ async function submitRegistration() {
   const fullName = document.getElementById('fullName').value.trim();
   const mobile = document.getElementById('mobile').value.trim();
 
+  // Helper to show error AND re-enable button
+  function validationError(msg) {
+    showError(msg);
+    btn.disabled = false;
+  }
+
   if (!cardId || !fullName || !mobile) {
-    showError('Please fill in all required fields (Card ID, Name, Mobile).'); return;
+    validationError('Please fill in all required fields (Card ID, Name, Mobile).'); return;
   }
 
   if (!/^CARD-\d{3,}$/i.test(cardId)) {
-    showError('Invalid Card ID format. Use CARD-001, CARD-002, etc.'); return;
+    validationError('Invalid Card ID format. Use CARD-001, CARD-002, etc.'); return;
   }
 
   if (!photoBase64) {
-    showError('Please upload a photo of your bingo card.'); return;
+    validationError('Please upload a photo of your bingo card.'); return;
   }
 
   // Collect grid numbers
@@ -835,17 +851,16 @@ async function submitRegistration() {
   });
 
   if (!valid || numbers.length !== 24) {
-    showError('Please fill in all 24 numbers on your bingo card.'); return;
+    validationError('Please fill in all 24 numbers on your bingo card.'); return;
   }
 
   // Check for duplicates
   const seen = new Set();
   for (let n of numbers) {
-    if (seen.has(n)) { showError(`Duplicate number: ${n}. Each number must appear only once.`); return; }
+    if (seen.has(n)) { validationError(`Duplicate number: ${n}. Each number must appear only once.`); return; }
     seen.add(n);
   }
 
-  btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>Registering...';
 
   try {
