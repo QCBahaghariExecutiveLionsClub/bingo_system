@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Bingo Draw — Public Display</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a18;
+    --card: #10101f;
+    --gold: #f5c842;
+    --accent: #e94560;
+    --green: #0ab68b;
+    --blue: #4a90d9;
+    --purple: #a855f7;
+    --text: #ffffff;
+    --muted: #6b7080;
+    --border: rgba(255,255,255,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow: hidden;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(245,200,66,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 10% 90%, rgba(233,69,96,0.05) 0%, transparent 50%),
+      radial-gradient(ellipse 60% 40% at 90% 90%, rgba(10,182,139,0.05) 0%, transparent 50%);
+  }
+
+  /* Stars/particles */
+  .stars {
+    position: fixed; inset: 0; pointer-events: none; overflow: hidden;
+  }
+
+  .star {
+    position: absolute;
+    width: 2px; height: 2px;
+    background: white;
+    border-radius: 50%;
+    opacity: 0;
+    animation: twinkle var(--d) ease var(--delay) infinite;
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0; transform: scale(1); }
+    50% { opacity: var(--opacity); transform: scale(1.5); }
+  }
+
+  .layout {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;
+    padding: 16px;
+    gap: 16px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px 24px;
+  }
+
+  .logo {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    display: flex;
+    gap: 3px;
+  }
+
+  .logo span {
+    display: inline-block;
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    line-height: 44px;
+    text-align: center;
+  }
+
+  .logo span:nth-child(1) { background: #e94560; }
+  .logo span:nth-child(2) { background: #f5c842; color: #1a1a2e; }
+  .logo span:nth-child(3) { background: #0ab68b; }
+  .logo span:nth-child(4) { background: #4a90d9; }
+  .logo span:nth-child(5) { background: #a855f7; }
+
+  .live-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(233,69,96,0.15);
+    border: 1px solid rgba(233,69,96,0.4);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--accent);
+  }
+
+  .live-dot {
+    width: 8px; height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: blink 1s ease infinite;
+  }
+
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .draw-counter {
+    font-family: 'Fredoka One', cursive;
+    color: var(--muted);
+    font-size: 1rem;
+  }
+
+  .draw-counter strong { color: var(--gold); font-size: 1.3rem; }
+
+  /* Main content */
+  .main-content {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    gap: 16px;
+    overflow: hidden;
+  }
+
+  @media (max-width: 900px) {
+    .main-content { grid-template-columns: 1fr; }
+    .side-panel { display: none; }
+    body { overflow: auto; }
+    .layout { height: auto; }
+  }
+
+  /* Center - Big number display */
+  .center-display {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .big-number-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 32px 40px;
+    text-align: center;
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .big-number-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 40%, rgba(245,200,66,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .current-label {
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.9rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
+  }
+
+  .big-letter {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(4rem, 10vw, 8rem);
+    line-height: 1;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .big-number {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(7rem, 18vw, 15rem);
+    line-height: 0.85;
+    color: var(--gold);
+    text-shadow: 0 0 80px rgba(245,200,66,0.25), 0 0 160px rgba(245,200,66,0.1);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 4px 30px rgba(245,200,66,0.3));
+  }
+
+  .big-number.new-draw {
+    animation: numberPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  @keyframes numberPop {
+    0% { transform: scale(0.3) rotate(-5deg); filter: brightness(3); }
+    60% { transform: scale(1.1) rotate(2deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  /* Recent 5 draws */
+  .recent-strip {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .recent-chip {
+    flex: 1;
+    max-width: 80px;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-family: 'Fredoka One', cursive;
+    transition: all 0.3s;
+  }
+
+  .recent-chip .r-letter { font-size: 0.7rem; opacity: 0.8; }
+  .recent-chip .r-num { font-size: 1.2rem; }
+  .recent-chip.active { transform: scale(1.1); border-width: 2px; }
+  .recent-chip.b { border-color: rgba(233,69,96,0.5); background: rgba(233,69,96,0.1); }
+  .recent-chip.i { border-color: rgba(245,200,66,0.5); background: rgba(245,200,66,0.1); }
+  .recent-chip.n { border-color: rgba(10,182,139,0.5); background: rgba(10,182,139,0.1); }
+  .recent-chip.g { border-color: rgba(74,144,217,0.5); background: rgba(74,144,217,0.1); }
+  .recent-chip.o { border-color: rgba(168,85,247,0.5); background: rgba(168,85,247,0.1); }
+
+  /* Side panels */
+  .side-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .side-panel h3 {
+    font-family: 'Fredoka One', cursive;
+    color: var(--muted);
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+
+  /* Bingo board */
+  .bingo-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 3px;
+    flex: 1;
+  }
+
+  .board-header {
+    text-align: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1rem;
+    padding: 4px;
+  }
+
+  .board-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.2);
+    transition: all 0.3s;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  .board-cell.called {
+    color: #1a1a2e;
+    font-weight: 900;
+    animation: cellBright 0.4s ease;
+  }
+
+  @keyframes cellBright {
+    0% { transform: scale(0.5); filter: brightness(3); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+
+  .board-cell.called.letter-B { background: #e94560; border-color: #e94560; }
+  .board-cell.called.letter-I { background: #f5c842; border-color: #f5c842; }
+  .board-cell.called.letter-N { background: #0ab68b; border-color: #0ab68b; }
+  .board-cell.called.letter-G { background: #4a90d9; border-color: #4a90d9; }
+  .board-cell.called.letter-O { background: #a855f7; border-color: #a855f7; }
+
+  /* All drawn list */
+  .all-draws-list {
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .draw-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 6px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    background: rgba(255,255,255,0.02);
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .draw-row .dl {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.65rem;
+    color: #1a1a2e;
+    flex-shrink: 0;
+  }
+
+  .draw-row .dn { font-weight: 800; }
+  .draw-row .dt { color: var(--muted); font-size: 0.72rem; margin-left: auto; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding: 4px;
+  }
+
+  footer strong { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="layout">
+  <header>
+    <div class="logo">
+      <span>B</span><span>I</span><span>N</span><span>G</span><span>O</span>
+    </div>
+    <div class="live-badge">
+      <div class="live-dot"></div>
+      LIVE DRAW
+    </div>
+    <div class="draw-counter">
+      Numbers Called: <strong id="drawnCount">0</strong> / 75
+    </div>
+  </header>
+
+  <div class="main-content">
+
+    <!-- Left: Bingo Board -->
+    <div class="side-panel">
+      <h3>📊 Bingo Board</h3>
+      <div class="bingo-board" id="bingoBoard"></div>
+    </div>
+
+    <!-- Center -->
+    <div class="center-display">
+      <div class="big-number-card">
+        <div class="current-label">Current Number</div>
+        <div class="big-letter" id="bigLetter" style="color:var(--muted)">–</div>
+        <div class="big-number" id="bigNumber" style="color:var(--muted)">?</div>
+      </div>
+
+      <div class="recent-strip" id="recentStrip">
+        <!-- 5 most recent -->
+      </div>
+    </div>
+
+    <!-- Right: Drawn List -->
+    <div class="side-panel">
+      <h3>📋 Called Numbers</h3>
+      <div class="all-draws-list" id="allDrawsList">
+        <div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:20px 0">
+          Waiting for first draw...
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    Auto-refreshes every <strong>5 seconds</strong> &nbsp;•&nbsp; Digital Bingo Verification System
+  </footer>
+</div>
+
+<script>
+// ================================================================
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-kWoACAQMyCc8l_DZKBlvbmJkMkmrrGxK3ScR1mZt7wG2m9Ygp5JwRBBnwmvH3A_z/exec";
+// ================================================================
+
+let lastDrawCount = 0;
+let drawnNumbers = [];
+
+// Stars
+function makeStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 80; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    star.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      --d:${2+Math.random()*4}s;
+      --delay:${Math.random()*4}s;
+      --opacity:${0.2+Math.random()*0.5};
+    `;
+    container.appendChild(star);
+  }
+}
+
+// Build bingo board
+function buildBingoBoard() {
+  const board = document.getElementById('bingoBoard');
+  const letters = ['B','I','N','G','O'];
+  const colors = { B:'#e94560', I:'#f5c842', N:'#0ab68b', G:'#4a90d9', O:'#a855f7' };
+  
+  letters.forEach(l => {
+    const h = document.createElement('div');
+    h.className = 'board-header';
+    h.style.color = colors[l];
+    h.textContent = l;
+    board.appendChild(h);
+  });
+
+  const ranges = [[1,15],[16,30],[31,45],[46,60],[61,75]];
+  for (let r = 0; r < 15; r++) {
+    for (let c = 0; c < 5; c++) {
+      const num = ranges[c][0] + r;
+      if (num > ranges[c][1]) { board.appendChild(document.createElement('div')); continue; }
+      const cell = document.createElement('div');
+      cell.className = 'board-cell';
+      cell.id = `bc-${num}`;
+      cell.textContent = num;
+      board.appendChild(cell);
+    }
+  }
+}
+
+function getBingoLetter(n) {
+  if (n <= 15) return 'B';
+  if (n <= 30) return 'I';
+  if (n <= 45) return 'N';
+  if (n <= 60) return 'G';
+  return 'O';
+}
+
+function getLetterColor(l) {
+  const c = { B:'#e94560', I:'#f5c842', N:'#0ab68b', G:'#4a90d9', O:'#a855f7' };
+  return c[l];
+}
+
+async function fetchDraws() {
+  try {
+    const data = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'getDraws' })
+    }).then(r => r.json());
+
+    if (data.success && data.draws) {
+      if (data.draws.length !== lastDrawCount) {
+        updateDisplay(data.draws);
+        lastDrawCount = data.draws.length;
+      }
+    }
+  } catch(e) {}
+}
+
+function updateDisplay(draws) {
+  drawnNumbers = draws.map(d => d.number);
+  const total = draws.length;
+  document.getElementById('drawnCount').textContent = total;
+
+  // Reset board
+  document.querySelectorAll('.board-cell.called').forEach(c => {
+    c.classList.remove('called','letter-B','letter-I','letter-N','letter-G','letter-O');
+  });
+
+  // Mark called
+  draws.forEach(d => {
+    const cell = document.getElementById(`bc-${d.number}`);
+    if (cell) cell.classList.add('called', `letter-${d.letter}`);
+  });
+
+  // Update big number (latest draw)
+  if (draws.length > 0) {
+    const last = draws[draws.length - 1];
+    const letter = document.getElementById('bigLetter');
+    const number = document.getElementById('bigNumber');
+    
+    letter.textContent = last.letter;
+    letter.style.color = getLetterColor(last.letter);
+    
+    number.textContent = last.number;
+    number.style.color = getLetterColor(last.letter);
+    number.style.textShadow = `0 0 80px ${getLetterColor(last.letter)}40, 0 0 160px ${getLetterColor(last.letter)}20`;
+    number.style.filter = `drop-shadow(0 4px 30px ${getLetterColor(last.letter)}50)`;
+    
+    number.classList.remove('new-draw');
+    void number.offsetWidth; // reflow
+    number.classList.add('new-draw');
+  }
+
+  // Recent 5
+  const strip = document.getElementById('recentStrip');
+  strip.innerHTML = '';
+  const recent = draws.slice(-5).reverse();
+  recent.forEach((d, idx) => {
+    const chip = document.createElement('div');
+    chip.className = `recent-chip ${d.letter.toLowerCase()} ${idx === 0 ? 'active' : ''}`;
+    chip.innerHTML = `<div class="r-letter">${d.letter}</div><div class="r-num">${d.number}</div>`;
+    strip.appendChild(chip);
+  });
+
+  // All draws list (newest first)
+  const list = document.getElementById('allDrawsList');
+  if (draws.length === 0) {
+    list.innerHTML = '<div style="color:var(--muted);font-size:0.85rem;text-align:center;padding:20px 0">Waiting for first draw...</div>';
+    return;
+  }
+  
+  list.innerHTML = [...draws].reverse().map((d, i) => {
+    const ts = new Date(d.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const color = getLetterColor(d.letter);
+    return `<div class="draw-row" style="animation-delay:${i*0.02}s">
+      <div class="dl" style="background:${color}">${d.letter}</div>
+      <div class="dn" style="color:${color}">${d.number}</div>
+      <div class="dt">${ts}</div>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  makeStars();
+  buildBingoBoard();
+  fetchDraws();
+  setInterval(fetchDraws, 5000);
+});
+</script>
+</body>
+</html>

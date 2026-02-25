@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo Card Registration</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #f5c842;
+    --deep: #1a1a2e;
+    --card: #16213e;
+    --accent: #e94560;
+    --green: #0ab68b;
+    --text: #eaeaea;
+    --muted: #8892a4;
+    --border: rgba(245,200,66,0.2);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--deep);
+    color: var(--text);
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 20% 20%, rgba(233,69,96,0.08) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(10,182,139,0.08) 0%, transparent 50%),
+      url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+
+  header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    position: relative;
+  }
+
+  .logo-bingo {
+    font-family: 'Fredoka One', cursive;
+    font-size: clamp(2.5rem, 8vw, 4rem);
+    letter-spacing: 0.15em;
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .logo-bingo span {
+    display: inline-block;
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    line-height: 60px;
+    text-align: center;
+    animation: popIn 0.5s ease backwards;
+  }
+
+  .logo-bingo span:nth-child(1) { background: #e94560; animation-delay: 0s; }
+  .logo-bingo span:nth-child(2) { background: #f5c842; color: #1a1a2e; animation-delay: 0.1s; }
+  .logo-bingo span:nth-child(3) { background: #0ab68b; animation-delay: 0.2s; }
+  .logo-bingo span:nth-child(4) { background: #4a90d9; animation-delay: 0.3s; }
+  .logo-bingo span:nth-child(5) { background: #a855f7; animation-delay: 0.4s; }
+
+  @keyframes popIn {
+    from { transform: scale(0) rotate(-10deg); opacity: 0; }
+    to { transform: scale(1) rotate(0); opacity: 1; }
+  }
+
+  header p {
+    color: var(--muted);
+    margin-top: 12px;
+    font-size: 1rem;
+  }
+
+  .lock-banner {
+    background: linear-gradient(135deg, #e94560, #c0392b);
+    color: white;
+    text-align: center;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 1rem;
+    display: none;
+    animation: pulse 2s ease infinite;
+  }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
+
+  .countdown-bar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    padding: 10px;
+    font-size: 0.85rem;
+    color: var(--gold);
+  }
+
+  .countdown-bar span { font-weight: 800; font-size: 1rem; }
+
+  .container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 20px 16px 60px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--gold), var(--green));
+  }
+
+  .card h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: var(--gold);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .card h2 .step-num {
+    background: var(--gold);
+    color: var(--deep);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  input[type="text"],
+  input[type="tel"] {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+  }
+
+  input:focus {
+    border-color: var(--gold);
+    background: rgba(245,200,66,0.05);
+  }
+
+  input.error { border-color: var(--accent); }
+  input.valid { border-color: var(--green); }
+
+  .field-hint {
+    font-size: 0.78rem;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+
+  /* BINGO GRID INPUT */
+  .bingo-grid-section h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 10px;
+  }
+
+  .bingo-header-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+
+  .bingo-header-row div {
+    text-align: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    padding: 6px;
+    border-radius: 8px;
+  }
+
+  .bingo-header-row div:nth-child(1) { color: #e94560; }
+  .bingo-header-row div:nth-child(2) { color: #f5c842; }
+  .bingo-header-row div:nth-child(3) { color: #0ab68b; }
+  .bingo-header-row div:nth-child(4) { color: #4a90d9; }
+  .bingo-header-row div:nth-child(5) { color: #a855f7; }
+
+  .bingo-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+  }
+
+  .bingo-grid input {
+    width: 100%;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 800;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: var(--text);
+    outline: none;
+    font-family: 'Nunito', sans-serif;
+    transition: border-color 0.2s, background 0.2s, transform 0.1s;
+  }
+
+  .bingo-grid input:focus {
+    border-color: var(--gold);
+    background: rgba(245,200,66,0.08);
+    transform: scale(1.05);
+    z-index: 1;
+    position: relative;
+  }
+
+  .bingo-grid input[readonly] {
+    background: linear-gradient(135deg, rgba(10,182,139,0.2), rgba(10,182,139,0.1));
+    border-color: var(--green);
+    color: var(--green);
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.1rem;
+    cursor: not-allowed;
+  }
+
+  /* Column coloring */
+  .col-b input { border-color: rgba(233,69,96,0.3); }
+  .col-i input { border-color: rgba(245,200,66,0.3); }
+  .col-n input { border-color: rgba(10,182,139,0.3); }
+  .col-g input { border-color: rgba(74,144,217,0.3); }
+  .col-o input { border-color: rgba(168,85,247,0.3); }
+
+  /* Photo upload */
+  .photo-upload-area {
+    border: 2px dashed rgba(245,200,66,0.3);
+    border-radius: 14px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: rgba(245,200,66,0.02);
+  }
+
+  .photo-upload-area:hover {
+    border-color: var(--gold);
+    background: rgba(245,200,66,0.05);
+  }
+
+  .photo-upload-area input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .photo-upload-area .upload-icon { font-size: 2.5rem; margin-bottom: 8px; }
+  .photo-upload-area p { color: var(--muted); font-size: 0.9rem; }
+  .photo-upload-area strong { color: var(--gold); }
+
+  #photoPreview {
+    margin-top: 14px;
+    display: none;
+  }
+
+  #photoPreview img {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: 10px;
+    border: 2px solid var(--green);
+    display: block;
+    margin: 0 auto;
+  }
+
+  .photo-ok {
+    margin-top: 8px;
+    color: var(--green);
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+
+  /* Submit button */
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--gold), #e8b800);
+    color: var(--deep);
+    border: none;
+    border-radius: 12px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.3rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-submit:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(245,200,66,0.4);
+  }
+
+  .btn-submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Messages */
+  .alert {
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-top: 16px;
+    display: none;
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateY(-10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .alert-error {
+    background: rgba(233,69,96,0.15);
+    border: 1px solid rgba(233,69,96,0.4);
+    color: #ff6b8a;
+  }
+
+  .alert-success {
+    background: rgba(10,182,139,0.15);
+    border: 1px solid rgba(10,182,139,0.4);
+    color: var(--green);
+  }
+
+  /* Success state */
+  .success-overlay {
+    display: none;
+    text-align: center;
+    padding: 40px 20px;
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .success-overlay .checkmark {
+    font-size: 5rem;
+    animation: bounce 0.6s ease 0.2s backwards;
+  }
+
+  @keyframes bounce {
+    0% { transform: scale(0); }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  .success-overlay h2 {
+    font-family: 'Fredoka One', cursive;
+    font-size: 2rem;
+    color: var(--green);
+    margin: 12px 0 8px;
+  }
+
+  .success-overlay .receipt {
+    background: rgba(10,182,139,0.1);
+    border: 1px solid rgba(10,182,139,0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+    text-align: left;
+    font-size: 0.9rem;
+  }
+
+  .success-overlay .receipt .row {
+    display: flex;
+    justify-content: space-between;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(10,182,139,0.1);
+  }
+
+  .success-overlay .receipt .row:last-child { border-bottom: none; }
+  .success-overlay .receipt .label { color: var(--muted); }
+  .success-overlay .receipt .value { font-weight: 800; color: var(--green); }
+
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(26,26,46,0.3);
+    border-top-color: var(--deep);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .grid-validator {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: none;
+  }
+
+  .grid-validator.ok { background: rgba(10,182,139,0.12); color: var(--green); display: block; }
+  .grid-validator.warn { background: rgba(245,200,66,0.12); color: var(--gold); display: block; }
+  .grid-validator.err { background: rgba(233,69,96,0.12); color: var(--accent); display: block; }
+
+  @media (max-width: 480px) {
+    .card { padding: 20px 16px; }
+    .bingo-grid input { font-size: 0.85rem; padding: 8px 2px; }
+    .logo-bingo span { width: 48px; height: 48px; line-height: 48px; font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="lockBanner" class="lock-banner">
+  🔒 REGISTRATION IS NOW CLOSED — The game has started. No new cards can be registered.
+</div>
+
+<div class="countdown-bar" id="countdownBar">
+  ⏳ Registration closes in: <span id="countdown">calculating...</span>
+</div>
+
+<header>
+  <div class="logo-bingo">
+    <span>B</span><span>I</span><span>N</span><span>G</span><span>O</span>
+  </div>
+  <p>Register your physical bingo card before the event starts</p>
+</header>
+
+<div class="container">
+
+  <!-- FORM -->
+  <div id="formSection">
+
+    <!-- Step 1: Card Info -->
+    <div class="card">
+      <h2><span class="step-num">1</span> Your Card Details</h2>
+
+      <div class="form-group">
+        <label>Card ID *</label>
+        <input type="text" id="cardId" placeholder="CARD-001" maxlength="10" autocomplete="off">
+        <div class="field-hint">As written on your bingo card (format: CARD-001)</div>
+        <div id="cardIdStatus" class="field-hint" style="margin-top:4px;"></div>
+      </div>
+
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" id="fullName" placeholder="Juan Dela Cruz" maxlength="60">
+      </div>
+
+      <div class="form-group">
+        <label>Mobile Number *</label>
+        <input type="tel" id="mobile" placeholder="09XX XXX XXXX" maxlength="12">
+        <div class="field-hint">For winner notification</div>
+      </div>
+    </div>
+
+    <!-- Step 2: Card Grid -->
+    <div class="card">
+      <h2><span class="step-num">2</span> Enter Your Card Numbers</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">
+        Enter all 24 numbers from your physical bingo card exactly as printed. The center FREE space is pre-filled.
+        <br><br>
+        <strong style="color:var(--gold)">Column ranges:</strong> B(1–15) &nbsp; I(16–30) &nbsp; N(31–45) &nbsp; G(46–60) &nbsp; O(61–75)
+      </p>
+
+      <div class="bingo-grid-section">
+        <div class="bingo-header-row">
+          <div>B</div><div>I</div><div>N</div><div>G</div><div>O</div>
+        </div>
+
+        <div class="bingo-grid" id="bingoGrid">
+          <!-- Generated by JS -->
+        </div>
+
+        <div id="gridValidator" class="grid-validator"></div>
+      </div>
+    </div>
+
+    <!-- Step 3: Photo -->
+    <div class="card">
+      <h2><span class="step-num">3</span> Upload Card Photo</h2>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:16px;">
+        Take a clear photo of your physical bingo card. This is your proof of ownership.
+        Only JPG and PNG files are accepted.
+      </p>
+
+      <div class="photo-upload-area" id="uploadArea">
+        <input type="file" id="photoFile" accept="image/jpeg,image/jpg,image/png">
+        <div class="upload-icon">📸</div>
+        <p><strong>Tap to select photo</strong></p>
+        <p>JPG or PNG only • Max 5MB</p>
+      </div>
+
+      <div id="photoPreview">
+        <img id="previewImg" src="" alt="Card preview">
+        <div class="photo-ok">✅ Photo ready for upload</div>
+      </div>
+
+      <div id="photoError" class="alert alert-error"></div>
+    </div>
+
+    <!-- Submit -->
+    <button class="btn-submit" id="submitBtn" onclick="submitRegistration()">
+      🎱 Register My Bingo Card
+    </button>
+
+    <div id="mainError" class="alert alert-error"></div>
+
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="success-overlay" id="successSection">
+    <div class="checkmark">🎉</div>
+    <h2>You're Registered!</h2>
+    <p style="color:var(--muted);">Your bingo card has been digitally recorded. Good luck!</p>
+    <div class="receipt" id="receipt"></div>
+    <p style="color:var(--muted);margin-top:20px;font-size:0.85rem;">
+      Keep this page as confirmation. You cannot edit your registration after this point.
+    </p>
+  </div>
+
+</div>
+
+<script>
+// ================================================================
+// CONFIG — Replace with your deployed Google Apps Script URL
+// ================================================================
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-kWoACAQMyCc8l_DZKBlvbmJkMkmrrGxK3ScR1mZt7wG2m9Ygp5JwRBBnwmvH3A_z/exec";
+// ================================================================
+
+const LOCK_TIME = new Date("REGISTRATION_LOCK_TIME_HERE"); // Will be set dynamically
+
+let photoBase64 = null;
+let photoMime = null;
+let cardIdCheckTimer = null;
+let gridValues = new Array(24).fill('');
+
+// Build bingo grid
+function buildGrid() {
+  const grid = document.getElementById('bingoGrid');
+  const cols = ['b','i','n','g','o'];
+  let idx = 0;
+  
+  for (let r = 0; r < 5; r++) {
+    for (let c = 0; c < 5; c++) {
+      const cellIdx = r * 5 + c;
+      const wrapper = document.createElement('div');
+      wrapper.className = `col-${cols[c]}`;
+      
+      if (r === 2 && c === 2) {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.value = 'FREE';
+        inp.readOnly = true;
+        wrapper.appendChild(inp);
+      } else {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.inputMode = 'numeric';
+        inp.maxLength = 2;
+        inp.dataset.idx = idx++;
+        inp.dataset.col = c;
+        inp.placeholder = getPlaceholder(c);
+        inp.addEventListener('input', onGridInput);
+        inp.addEventListener('keydown', onGridKeydown);
+        wrapper.appendChild(inp);
+      }
+      grid.appendChild(wrapper);
+    }
+  }
+}
+
+function getPlaceholder(col) {
+  const ranges = ['1-15','16-30','31-45','46-60','61-75'];
+  return ranges[col];
+}
+
+function onGridInput(e) {
+  const inp = e.target;
+  const val = inp.value.replace(/\D/g,'');
+  inp.value = val;
+  validateGrid();
+  // Auto-advance
+  if (val.length === 2) {
+    const inputs = [...document.querySelectorAll('.bingo-grid input:not([readonly])')];
+    const idx = inputs.indexOf(inp);
+    if (idx < inputs.length - 1) inputs[idx + 1].focus();
+  }
+}
+
+function onGridKeydown(e) {
+  if (e.key === 'Backspace' && e.target.value === '') {
+    const inputs = [...document.querySelectorAll('.bingo-grid input:not([readonly])')];
+    const idx = inputs.indexOf(e.target);
+    if (idx > 0) { inputs[idx - 1].focus(); e.preventDefault(); }
+  }
+}
+
+function validateGrid() {
+  const inputs = [...document.querySelectorAll('.bingo-grid input:not([readonly])')];
+  const nums = inputs.map(i => parseInt(i.value)).filter(n => !isNaN(n));
+  const validator = document.getElementById('gridValidator');
+  
+  const colRanges = [[1,15],[16,30],[31,45],[46,60],[61,75]];
+  let errors = [];
+  let allFilled = 0;
+
+  inputs.forEach(inp => {
+    const col = parseInt(inp.dataset.col);
+    const val = parseInt(inp.value);
+    inp.classList.remove('error','valid');
+    if (!isNaN(val)) {
+      allFilled++;
+      const [min, max] = colRanges[col];
+      if (val < min || val > max) {
+        inp.classList.add('error');
+        errors.push(`${val} not valid for ${['B','I','N','G','O'][col]} column (${min}–${max})`);
+      } else {
+        inp.classList.add('valid');
+      }
+    }
+  });
+
+  // Duplicates
+  const seen = new Set();
+  const dups = new Set();
+  nums.forEach(n => { if (seen.has(n)) dups.add(n); else seen.add(n); });
+  if (dups.size > 0) errors.push(`Duplicate numbers: ${[...dups].join(', ')}`);
+
+  if (allFilled < 24) {
+    validator.className = 'grid-validator warn';
+    validator.textContent = `${allFilled}/24 numbers entered`;
+  } else if (errors.length > 0) {
+    validator.className = 'grid-validator err';
+    validator.textContent = '⚠️ ' + errors[0];
+  } else {
+    validator.className = 'grid-validator ok';
+    validator.textContent = '✅ All 24 numbers look valid!';
+  }
+}
+
+// Card ID check (debounced)
+document.addEventListener('DOMContentLoaded', () => {
+  buildGrid();
+  checkSession();
+
+  document.getElementById('cardId').addEventListener('input', function() {
+    clearTimeout(cardIdCheckTimer);
+    const val = this.value.trim().toUpperCase();
+    this.value = val;
+    const status = document.getElementById('cardIdStatus');
+    
+    if (!val) { status.textContent = ''; return; }
+    const pattern = /^CARD-\d{3,}$/;
+    if (!pattern.test(val)) {
+      status.style.color = '#ff6b8a';
+      status.textContent = '⚠️ Format: CARD-001, CARD-002, etc.';
+      return;
+    }
+    
+    status.style.color = 'var(--muted)';
+    status.textContent = '⌛ Checking availability...';
+    
+    cardIdCheckTimer = setTimeout(async () => {
+      try {
+        const res = await apiCall({ action: 'checkCardId', cardId: val });
+        if (res.unique) {
+          status.style.color = 'var(--green)';
+          status.textContent = '✅ Card ID is available';
+          document.getElementById('cardId').classList.add('valid');
+          document.getElementById('cardId').classList.remove('error');
+        } else {
+          status.style.color = '#ff6b8a';
+          status.textContent = '❌ This Card ID is already registered';
+          document.getElementById('cardId').classList.add('error');
+          document.getElementById('cardId').classList.remove('valid');
+        }
+      } catch(e) {
+        status.textContent = '';
+      }
+    }, 600);
+  });
+});
+
+// Photo handler
+document.getElementById('photoFile').addEventListener('change', function() {
+  const file = this.files[0];
+  const err = document.getElementById('photoError');
+  err.style.display = 'none';
+  
+  if (!file) return;
+  
+  const allowed = ['image/jpeg','image/jpg','image/png'];
+  if (!allowed.includes(file.type)) {
+    err.textContent = '❌ Only JPG and PNG images are accepted.';
+    err.style.display = 'block';
+    this.value = '';
+    return;
+  }
+  
+  if (file.size > 5 * 1024 * 1024) {
+    err.textContent = '❌ File too large. Maximum 5MB.';
+    err.style.display = 'block';
+    this.value = '';
+    return;
+  }
+  
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const dataUrl = e.target.result;
+    photoBase64 = dataUrl.split(',')[1];
+    photoMime = file.type;
+    
+    document.getElementById('previewImg').src = dataUrl;
+    document.getElementById('photoPreview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
+
+// Check session/lock time
+async function checkSession() {
+  try {
+    const data = await apiCall({ action: 'getSession' });
+    if (data.success) {
+      const lockTime = new Date(data.lockTime);
+      if (data.isLocked) {
+        showLocked();
+      } else {
+        startCountdown(lockTime);
+      }
+    }
+  } catch(e) {}
+}
+
+function showLocked() {
+  document.getElementById('lockBanner').style.display = 'block';
+  document.getElementById('countdownBar').style.display = 'none';
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('submitBtn').textContent = '🔒 Registration Closed';
+}
+
+function startCountdown(lockTime) {
+  function update() {
+    const now = new Date();
+    const diff = lockTime - now;
+    if (diff <= 0) { showLocked(); return; }
+    
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    
+    document.getElementById('countdown').textContent =
+      `${h > 0 ? h + 'h ' : ''}${m}m ${s}s`;
+    
+    setTimeout(update, 1000);
+  }
+  update();
+}
+
+// Submit
+async function submitRegistration() {
+  const btn = document.getElementById('submitBtn');
+  const err = document.getElementById('mainError');
+  err.style.display = 'none';
+
+  const cardId = document.getElementById('cardId').value.trim().toUpperCase();
+  const fullName = document.getElementById('fullName').value.trim();
+  const mobile = document.getElementById('mobile').value.trim();
+
+  if (!cardId || !fullName || !mobile) {
+    showError('Please fill in all required fields (Card ID, Name, Mobile).'); return;
+  }
+
+  if (!/^CARD-\d{3,}$/i.test(cardId)) {
+    showError('Invalid Card ID format. Use CARD-001, CARD-002, etc.'); return;
+  }
+
+  if (!photoBase64) {
+    showError('Please upload a photo of your bingo card.'); return;
+  }
+
+  // Collect grid numbers
+  const inputs = [...document.querySelectorAll('.bingo-grid input:not([readonly])')];
+  const numbers = [];
+  let valid = true;
+  
+  inputs.forEach(inp => {
+    const val = parseInt(inp.value);
+    if (isNaN(val)) { valid = false; }
+    else numbers.push(val);
+  });
+
+  if (!valid || numbers.length !== 24) {
+    showError('Please fill in all 24 numbers on your bingo card.'); return;
+  }
+
+  // Check for duplicates
+  const seen = new Set();
+  for (let n of numbers) {
+    if (seen.has(n)) { showError(`Duplicate number: ${n}. Each number must appear only once.`); return; }
+    seen.add(n);
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Registering...';
+
+  try {
+    const result = await apiCall({
+      action: 'register',
+      cardId,
+      fullName,
+      mobile,
+      numbers: JSON.stringify(numbers),
+      photoBase64,
+      photoMime
+    });
+
+    if (result.success) {
+      showSuccess(result, cardId, fullName, mobile);
+    } else {
+      showError(result.error || 'Registration failed. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = '🎱 Register My Bingo Card';
+    }
+  } catch(e) {
+    showError('Network error. Please check your internet connection and try again.');
+    btn.disabled = false;
+    btn.innerHTML = '🎱 Register My Bingo Card';
+  }
+}
+
+function showError(msg) {
+  const err = document.getElementById('mainError');
+  err.textContent = '❌ ' + msg;
+  err.style.display = 'block';
+  err.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function showSuccess(result, cardId, fullName, mobile) {
+  document.getElementById('formSection').style.display = 'none';
+  const s = document.getElementById('successSection');
+  s.style.display = 'block';
+  
+  const ts = new Date(result.timestamp).toLocaleString('en-PH', {
+    dateStyle: 'medium', timeStyle: 'short'
+  });
+  
+  document.getElementById('receipt').innerHTML = `
+    <div class="row"><span class="label">Card ID</span><span class="value">${cardId}</span></div>
+    <div class="row"><span class="label">Name</span><span class="value">${fullName}</span></div>
+    <div class="row"><span class="label">Mobile</span><span class="value">${mobile}</span></div>
+    <div class="row"><span class="label">Registered</span><span class="value">${ts}</span></div>
+    <div class="row"><span class="label">Status</span><span class="value" style="color:var(--green)">✅ Confirmed</span></div>
+  `;
+  
+  s.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function apiCall(data) {
+  const response = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return response.json();
+}
+</script>
+</body>
+</html>

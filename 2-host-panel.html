@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Host Draw Panel — Bingo Live</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d0d1a;
+    --card: #13132a;
+    --gold: #f5c842;
+    --accent: #e94560;
+    --green: #0ab68b;
+    --blue: #4a90d9;
+    --purple: #a855f7;
+    --text: #eaeaea;
+    --muted: #7a7f9a;
+    --border: rgba(255,255,255,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* Login */
+  #loginOverlay {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  #loginOverlay h1 {
+    font-family: 'Fredoka One', cursive;
+    color: var(--gold);
+    font-size: 2rem;
+  }
+
+  .login-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    width: 100%;
+    max-width: 340px;
+    text-align: center;
+  }
+
+  .login-card input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'Nunito', sans-serif;
+    font-size: 1.1rem;
+    text-align: center;
+    letter-spacing: 0.1em;
+    outline: none;
+    margin-bottom: 12px;
+  }
+
+  .login-card input:focus { border-color: var(--gold); }
+
+  .btn-login {
+    width: 100%;
+    padding: 12px;
+    background: var(--gold);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+
+  .btn-login:hover { opacity: 0.9; }
+  .login-err { color: var(--accent); font-size: 0.85rem; margin-top: 8px; display: none; }
+
+  /* Main layout */
+  #mainPanel { display: none; }
+
+  nav {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  nav .brand {
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.4rem;
+    color: var(--gold);
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .reg-count {
+    background: rgba(10,182,139,0.15);
+    border: 1px solid rgba(10,182,139,0.3);
+    color: var(--green);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+  }
+
+  .btn-reset {
+    background: rgba(233,69,96,0.15);
+    border: 1px solid rgba(233,69,96,0.3);
+    color: var(--accent);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Nunito', sans-serif;
+    transition: background 0.2s;
+  }
+
+  .btn-reset:hover { background: rgba(233,69,96,0.25); }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  @media (max-width: 768px) {
+    .main-grid { grid-template-columns: 1fr; }
+  }
+
+  .draw-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* Big Number Display */
+  .number-display {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .number-display::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(245,200,66,0.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .current-letter {
+    font-family: 'Fredoka One', cursive;
+    font-size: 5rem;
+    line-height: 1;
+    margin-bottom: 0;
+    transition: all 0.3s;
+  }
+
+  .current-number {
+    font-family: 'Fredoka One', cursive;
+    font-size: 9rem;
+    line-height: 0.9;
+    color: var(--gold);
+    transition: all 0.3s;
+    text-shadow: 0 0 60px rgba(245,200,66,0.3);
+  }
+
+  .current-label {
+    color: var(--muted);
+    font-size: 0.9rem;
+    margin-top: 8px;
+  }
+
+  .btn-draw {
+    display: block;
+    width: 100%;
+    margin-top: 28px;
+    padding: 22px;
+    background: linear-gradient(135deg, var(--gold) 0%, #e8b800 100%);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 16px;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.8rem;
+    letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: all 0.15s;
+    box-shadow: 0 4px 30px rgba(245,200,66,0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-draw::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.3) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn-draw:hover:not(:disabled)::after { opacity: 1; }
+  .btn-draw:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(245,200,66,0.35); }
+  .btn-draw:active:not(:disabled) { transform: translateY(0); }
+  .btn-draw:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .draw-info {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    margin-top: 8px;
+  }
+
+  .draw-info strong { color: var(--gold); }
+
+  /* Recent draws */
+  .recent-draws {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .recent-draws h3 {
+    font-family: 'Fredoka One', cursive;
+    color: var(--muted);
+    font-size: 1rem;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .recent-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .draw-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px 4px 6px;
+    border-radius: 20px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    animation: chipIn 0.3s ease backwards;
+  }
+
+  @keyframes chipIn {
+    from { transform: scale(0); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .draw-chip .letter {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 0.75rem;
+    color: #1a1a2e;
+  }
+
+  .letter-B { background: #e94560; }
+  .letter-I { background: #f5c842; }
+  .letter-N { background: #0ab68b; }
+  .letter-G { background: #4a90d9; }
+  .letter-O { background: #a855f7; }
+
+  /* BINGO board */
+  .bingo-board-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .board-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+  }
+
+  .board-card h3 {
+    font-family: 'Fredoka One', cursive;
+    color: var(--muted);
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+  }
+
+  .bingo-board {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 4px;
+  }
+
+  .board-header {
+    text-align: center;
+    font-family: 'Fredoka One', cursive;
+    font-size: 1.2rem;
+    padding: 6px;
+  }
+
+  .board-cell {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: var(--muted);
+    transition: all 0.3s;
+    font-family: 'Nunito', sans-serif;
+  }
+
+  .board-cell.called {
+    color: #1a1a2e;
+    font-weight: 900;
+    transform: scale(1.05);
+    animation: cellPop 0.4s ease backwards;
+  }
+
+  @keyframes cellPop {
+    0% { transform: scale(0.5); }
+    60% { transform: scale(1.15); }
+    100% { transform: scale(1.05); }
+  }
+
+  .board-cell.called.letter-B { background: #e94560; border-color: #e94560; }
+  .board-cell.called.letter-I { background: #f5c842; border-color: #f5c842; }
+  .board-cell.called.letter-N { background: #0ab68b; border-color: #0ab68b; }
+  .board-cell.called.letter-G { background: #4a90d9; border-color: #4a90d9; }
+  .board-cell.called.letter-O { background: #a855f7; border-color: #a855f7; }
+
+  .spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(26,26,46,0.3);
+    border-top-color: var(--bg);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Registrations list */
+  .reg-list { max-height: 300px; overflow-y: auto; }
+  .reg-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border-radius: 8px;
+    transition: background 0.15s;
+    font-size: 0.85rem;
+  }
+  .reg-item:hover { background: rgba(255,255,255,0.04); }
+  .reg-item .card-id { font-weight: 800; color: var(--gold); }
+  .reg-item .name { color: var(--text); }
+  .reg-item .ts { color: var(--muted); font-size: 0.75rem; }
+
+  /* Flash animation on new draw */
+  @keyframes flashBg {
+    0% { background-color: rgba(245,200,66,0.3); }
+    100% { background-color: transparent; }
+  }
+
+  .flash { animation: flashBg 0.8s ease; }
+</style>
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div id="loginOverlay">
+  <h1>🎙️ Host Panel</h1>
+  <div class="login-card">
+    <p style="color:var(--muted);margin-bottom:16px;font-size:0.9rem;">Enter host password to access draw controls</p>
+    <input type="password" id="pwdInput" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn-login" onclick="doLogin()">Enter Host Panel</button>
+    <div class="login-err" id="loginErr">Incorrect password. Try again.</div>
+  </div>
+</div>
+
+<!-- Main Panel -->
+<div id="mainPanel">
+  <nav>
+    <div class="brand">🎙️ Host Draw Panel</div>
+    <div class="nav-right">
+      <div class="reg-count" id="regCount">0 registered cards</div>
+      <button class="btn-reset" onclick="resetDraws()">🔄 Reset Draws</button>
+    </div>
+  </nav>
+
+  <div class="main-grid">
+    <!-- Left: Draw Controls -->
+    <div class="draw-section">
+      <div class="number-display" id="numberDisplay">
+        <div class="current-letter" id="currentLetter" style="color:var(--muted)">–</div>
+        <div class="current-number" id="currentNumber" style="color:var(--muted)">?</div>
+        <div class="current-label">Press the button to draw a number</div>
+        <button class="btn-draw" id="drawBtn" onclick="drawNumber()">
+          🎱 DRAW NUMBER
+        </button>
+        <div class="draw-info">Numbers drawn: <strong id="drawnCount">0</strong> / 75</div>
+      </div>
+
+      <div class="recent-draws">
+        <h3>📋 All Called Numbers</h3>
+        <div class="recent-list" id="recentList">
+          <span style="color:var(--muted);font-size:0.85rem;">No numbers drawn yet</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Board + Registrations -->
+    <div class="bingo-board-section">
+      <div class="board-card">
+        <h3>📊 Bingo Board</h3>
+        <div class="bingo-board" id="bingoBoard">
+          <!-- Generated by JS -->
+        </div>
+      </div>
+
+      <div class="board-card">
+        <h3>👥 Registered Cards (<span id="regCountInner">0</span>)</h3>
+        <div class="reg-list" id="regList">
+          <span style="color:var(--muted);font-size:0.85rem;">Loading...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-kWoACAQMyCc8l_DZKBlvbmJkMkmrrGxK3ScR1mZt7wG2m9Ygp5JwRBBnwmvH3A_z/exec";
+// ================================================================
+
+let password = '';
+let drawnNumbers = [];
+let pollingInterval = null;
+
+// Login
+function doLogin() {
+  password = document.getElementById('pwdInput').value;
+  if (!password) return;
+  
+  document.getElementById('loginErr').style.display = 'none';
+  
+  // Try to load registrations with this password to verify
+  apiCall({ action: 'getRegistrations', password })
+    .then(data => {
+      if (data.success) {
+        document.getElementById('loginOverlay').style.display = 'none';
+        document.getElementById('mainPanel').style.display = 'block';
+        init();
+      } else {
+        document.getElementById('loginErr').style.display = 'block';
+      }
+    })
+    .catch(() => {
+      document.getElementById('loginErr').style.display = 'block';
+    });
+}
+
+function init() {
+  buildBingoBoard();
+  loadDraws();
+  loadRegistrations();
+  pollingInterval = setInterval(() => {
+    loadDraws();
+    loadRegistrations();
+  }, 10000);
+}
+
+// Build 5x5 bingo board display
+function buildBingoBoard() {
+  const board = document.getElementById('bingoBoard');
+  const letters = ['B','I','N','G','O'];
+  const colors = { B:'#e94560', I:'#f5c842', N:'#0ab68b', G:'#4a90d9', O:'#a855f7' };
+
+  // Headers
+  letters.forEach(l => {
+    const h = document.createElement('div');
+    h.className = 'board-header';
+    h.style.color = colors[l];
+    h.textContent = l;
+    board.appendChild(h);
+  });
+
+  // Numbers 1-75
+  const ranges = [[1,15],[16,30],[31,45],[46,60],[61,75]];
+  const maxRows = 15;
+  for (let r = 0; r < maxRows; r++) {
+    for (let c = 0; c < 5; c++) {
+      const num = ranges[c][0] + r;
+      if (num > ranges[c][1]) {
+        board.appendChild(document.createElement('div'));
+        continue;
+      }
+      const cell = document.createElement('div');
+      cell.className = 'board-cell';
+      cell.id = `cell-${num}`;
+      cell.textContent = num;
+      board.appendChild(cell);
+    }
+  }
+}
+
+function getBingoLetter(n) {
+  if (n <= 15) return 'B';
+  if (n <= 30) return 'I';
+  if (n <= 45) return 'N';
+  if (n <= 60) return 'G';
+  return 'O';
+}
+
+// Draw a number
+async function drawNumber() {
+  const btn = document.getElementById('drawBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+
+  try {
+    const data = await apiCall({ action: 'draw', password });
+    if (data.success) {
+      updateCurrentNumber(data.number, data.letter);
+      markCalled(data.number, data.letter);
+      addToRecentList(data.number, data.letter, true);
+      drawnNumbers.push(data.number);
+      document.getElementById('drawnCount').textContent = data.totalDrawn;
+      
+      // Flash the display
+      document.getElementById('numberDisplay').classList.add('flash');
+      setTimeout(() => document.getElementById('numberDisplay').classList.remove('flash'), 800);
+    } else {
+      alert('Error: ' + data.error);
+    }
+  } catch(e) {
+    alert('Network error. Please try again.');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🎱 DRAW NUMBER';
+}
+
+function updateCurrentNumber(num, letter) {
+  const letterColors = { B:'#e94560', I:'#f5c842', N:'#0ab68b', G:'#4a90d9', O:'#a855f7' };
+  const el = document.getElementById('currentLetter');
+  const en = document.getElementById('currentNumber');
+  
+  el.style.color = letterColors[letter];
+  el.textContent = letter;
+  en.textContent = num;
+  en.style.color = letterColors[letter];
+}
+
+function markCalled(num, letter) {
+  const cell = document.getElementById(`cell-${num}`);
+  if (cell) {
+    cell.classList.add('called', `letter-${letter}`);
+  }
+}
+
+function addToRecentList(num, letter, newest = false) {
+  const list = document.getElementById('recentList');
+  if (list.querySelector('span')) list.innerHTML = '';
+  
+  const chip = document.createElement('div');
+  chip.className = 'draw-chip';
+  chip.style.animationDelay = newest ? '0s' : '0.05s';
+  chip.innerHTML = `<div class="letter letter-${letter}">${letter}</div>${num}`;
+  
+  if (newest) {
+    list.insertBefore(chip, list.firstChild);
+  } else {
+    list.appendChild(chip);
+  }
+}
+
+async function loadDraws() {
+  try {
+    const data = await apiCall({ action: 'getDraws' });
+    if (data.success && data.draws) {
+      // Only update if draws have changed
+      if (data.draws.length !== drawnNumbers.length) {
+        drawnNumbers = data.draws.map(d => d.number);
+        document.getElementById('recentList').innerHTML = '';
+        document.getElementById('drawnCount').textContent = data.draws.length;
+        
+        // Reset board
+        document.querySelectorAll('.board-cell.called').forEach(c => c.classList.remove('called','letter-B','letter-I','letter-N','letter-G','letter-O'));
+        
+        data.draws.forEach(d => {
+          markCalled(d.number, d.letter);
+          addToRecentList(d.number, d.letter);
+        });
+        
+        if (data.draws.length > 0) {
+          const last = data.draws[data.draws.length - 1];
+          updateCurrentNumber(last.number, last.letter);
+        }
+
+        if (data.draws.length === 0) {
+          document.getElementById('recentList').innerHTML = '<span style="color:var(--muted);font-size:0.85rem;">No numbers drawn yet</span>';
+        }
+      }
+    }
+  } catch(e) {}
+}
+
+async function loadRegistrations() {
+  try {
+    const data = await apiCall({ action: 'getRegistrations', password });
+    if (data.success) {
+      const count = data.count || 0;
+      document.getElementById('regCount').textContent = `${count} registered cards`;
+      document.getElementById('regCountInner').textContent = count;
+      
+      const list = document.getElementById('regList');
+      if (!data.registrations || data.registrations.length === 0) {
+        list.innerHTML = '<span style="color:var(--muted);font-size:0.85rem;">No registrations yet</span>';
+        return;
+      }
+      
+      list.innerHTML = data.registrations.map(r => {
+        const ts = new Date(r.timestamp).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' });
+        return `<div class="reg-item">
+          <span class="card-id">${r.cardId}</span>
+          <span class="name">${r.fullName}</span>
+          <span class="ts">${ts}</span>
+        </div>`;
+      }).join('');
+    }
+  } catch(e) {}
+}
+
+async function resetDraws() {
+  if (!confirm('⚠️ Are you sure you want to reset ALL drawn numbers? This cannot be undone.')) return;
+  try {
+    const data = await apiCall({ action: 'resetDraws', password });
+    if (data.success) {
+      drawnNumbers = [];
+      document.getElementById('recentList').innerHTML = '<span style="color:var(--muted);font-size:0.85rem;">No numbers drawn yet</span>';
+      document.getElementById('drawnCount').textContent = '0';
+      document.getElementById('currentLetter').textContent = '–';
+      document.getElementById('currentLetter').style.color = 'var(--muted)';
+      document.getElementById('currentNumber').textContent = '?';
+      document.getElementById('currentNumber').style.color = 'var(--muted)';
+      document.querySelectorAll('.board-cell.called').forEach(c => c.classList.remove('called','letter-B','letter-I','letter-N','letter-G','letter-O'));
+      alert('Draws reset successfully.');
+    } else {
+      alert('Error: ' + data.error);
+    }
+  } catch(e) { alert('Network error.'); }
+}
+
+async function apiCall(data) {
+  const response = await fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return response.json();
+}
+
+document.getElementById('pwdInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
