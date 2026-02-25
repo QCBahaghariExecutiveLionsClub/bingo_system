@@ -472,7 +472,7 @@
 
 <script>
 // ================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSwsbRsSSU1JU_Kxh_3PiHd2UffDcOdTVzlpNLDaaCwNP0EdFjmHOwtrYmOSwiQxwh/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2JFCaE4aUnoKttupUAvyWKzj2zgoIyesGSLhpSAfr4zho7HY06ap6ZRWWT1WVTHLE/exec";
 // ================================================================
 
 let password = '';
@@ -695,12 +695,11 @@ async function resetDraws() {
 }
 
 async function apiCall(data) {
-  const response = await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  return response.json();
+  const url = new URL(APPS_SCRIPT_URL);
+  for (const [k, v] of Object.entries(data)) {
+    url.searchParams.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
+  }
+  return JSON.parse(await (await fetch(url.toString())).text());
 }
 
 document.getElementById('pwdInput').addEventListener('keydown', e => {

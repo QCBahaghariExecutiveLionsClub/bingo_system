@@ -569,7 +569,7 @@
 // ================================================================
 // CONFIG — Replace with your deployed Google Apps Script URL
 // ================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSwsbRsSSU1JU_Kxh_3PiHd2UffDcOdTVzlpNLDaaCwNP0EdFjmHOwtrYmOSwiQxwh/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2JFCaE4aUnoKttupUAvyWKzj2zgoIyesGSLhpSAfr4zho7HY06ap6ZRWWT1WVTHLE/exec";
 // ================================================================
 
 const LOCK_TIME = new Date("REGISTRATION_LOCK_TIME_HERE"); // Will be set dynamically
@@ -901,12 +901,21 @@ function showSuccess(result, cardId, fullName, mobile) {
 }
 
 async function apiCall(data) {
-  const response = await fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  });
-  return response.json();
+  // Use form-urlencoded POST for registration (has large base64 photo),
+  // GET params for everything else. Both are CORS "simple requests" = no preflight.
+  if (data.action === 'register') {
+    const body = new URLSearchParams();
+    for (const [k, v] of Object.entries(data)) {
+      body.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
+    }
+    const response = await fetch(APPS_SCRIPT_URL, { method: 'POST', body: body });
+    return JSON.parse(await response.text());
+  }
+  const url = new URL(APPS_SCRIPT_URL);
+  for (const [k, v] of Object.entries(data)) {
+    url.searchParams.append(k, typeof v === 'object' ? JSON.stringify(v) : String(v));
+  }
+  return JSON.parse(await (await fetch(url.toString())).text());
 }
 </script>
 </body>

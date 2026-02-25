@@ -414,7 +414,7 @@
 
 <script>
 // ================================================================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwSwsbRsSSU1JU_Kxh_3PiHd2UffDcOdTVzlpNLDaaCwNP0EdFjmHOwtrYmOSwiQxwh/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx2JFCaE4aUnoKttupUAvyWKzj2zgoIyesGSLhpSAfr4zho7HY06ap6ZRWWT1WVTHLE/exec";
 // ================================================================
 
 let lastDrawCount = 0;
@@ -480,11 +480,9 @@ function getLetterColor(l) {
 
 async function fetchDraws() {
   try {
-    const data = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'getDraws' })
-    }).then(r => r.json());
+    const url = new URL(APPS_SCRIPT_URL);
+    url.searchParams.append('action', 'getDraws');
+    const data = JSON.parse(await (await fetch(url.toString())).text());
 
     if (data.success && data.draws) {
       if (data.draws.length !== lastDrawCount) {
