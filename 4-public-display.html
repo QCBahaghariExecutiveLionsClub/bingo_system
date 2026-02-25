@@ -249,6 +249,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    min-height: 0;  /* allow flex child to shrink below content size */
   }
 
   .side-panel h3 {
@@ -261,12 +262,15 @@
     flex-shrink: 0;
   }
 
-  /* Bingo board */
+  /* Bingo board — 16 rows: 1 header + 15 number rows, all equal height */
   .bingo-board {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(16, 1fr);
     gap: 3px;
     flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .board-header {
@@ -274,10 +278,13 @@
     font-family: 'Fredoka One', cursive;
     font-size: 1rem;
     padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
   }
 
   .board-cell {
-    aspect-ratio: 1;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -289,6 +296,8 @@
     color: rgba(255,255,255,0.2);
     transition: all 0.3s;
     font-family: 'Nunito', sans-serif;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .board-cell.called {
